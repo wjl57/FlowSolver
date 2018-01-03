@@ -1,9 +1,12 @@
+import os
+from collections import defaultdict
+
 from FlowSolver.Node import Node
 from FlowSolver.Point import Point
 
 
 class GridPuzzle:
-    def __init__(self, x_dim, y_dim, initial_flows):
+    def __init__(self, x_dim, y_dim, initial_locations):
         self.x_dim = x_dim
         self.y_dim = y_dim
         self.puzzle = {}
@@ -26,22 +29,19 @@ class GridPuzzle:
                 east_node_id = self.x_y_to_node_id(x+1, y)
                 self.add_neighbors(node_id, east_node_id)
 
-        # Add initial flows
-        for flow in initial_flows:
-            node_id_1 = self.x_y_to_node_id(flow.x_1, flow.y_1)
-            node_id_2 = self.x_y_to_node_id(flow.x_2, flow.y_2)
-            node_1 = self.puzzle[node_id_1]
-            node_2 = self.puzzle[node_id_2]
-            node_1.add_point(flow.color, True)
-            node_2.add_point(flow.color, True)
+        # Add initial locations (Dictionary of Color -> [NodeId])
+        for color, node_ids in initial_locations.items():
+            for node_id in node_ids:
+                node = self.puzzle[node_id]
+                node.add_point(color, True)
 
     def node_id_to_x_y(self, node_id):
-        y = int(node_id / self.x_dim)
+        y = self.y_dim - 1 - int(node_id / self.x_dim)
         x = node_id % self.x_dim
         return x, y
 
     def x_y_to_node_id(self, x, y):
-        return x + y*self.x_dim
+        return x + (self.y_dim - 1 - y)*self.x_dim
 
     def add_neighbors(self, node_id_1, node_id_2):
         self.puzzle[node_id_1].add_neighbor(node_id_2)
@@ -57,17 +57,24 @@ class GridPuzzle:
                 node_id = self.x_y_to_node_id(x, y)
                 node = self.puzzle[node_id]
                 if node.color is None:
-                    print("*6", end="")
+                    print(".", end="")
                 else:
                     print(node.color, end="")
             print()
 
-
-class InitialFlows:
-    def __init__(self, color, coord_1, coord_2):
-        self.color = color
-        self.x_1 = coord_1[0]
-        self.y_1 = coord_1[1]
-        self.x_2 = coord_2[0]
-        self.y_2 = coord_2[1]
-
+    @staticmethod
+    def read_puzzle(relative_file_path):
+        y_dim = 0
+        initial_locations = defaultdict(list)
+        absolute_file_path = os.path.join(os.path.dirname(__file__), relative_file_path)
+        file = open(absolute_file_path)
+        node_id = 0
+        for line in file:
+            if line.strip():
+                y_dim += 1
+            for c in line.strip():
+                if c is not '.':
+                    initial_locations[c].append(node_id)
+                node_id += 1
+        x_dim = int(node_id / y_dim)
+        return x_dim, y_dim, initial_locations
