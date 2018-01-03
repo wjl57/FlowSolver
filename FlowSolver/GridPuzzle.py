@@ -1,8 +1,9 @@
 import os
 from collections import defaultdict
 
+from FlowSolver.BColors import BColors
 from FlowSolver.Node import Node
-from FlowSolver.Point import Point
+from FlowSolver.NodeTypes import NodeTypes
 
 
 class GridPuzzle:
@@ -31,9 +32,12 @@ class GridPuzzle:
 
         # Add initial locations (Dictionary of Color -> [NodeId])
         for color, node_ids in initial_locations.items():
-            for node_id in node_ids:
-                node = self.puzzle[node_id]
-                node.add_point(color, True)
+            source_node_id = node_ids[0]
+            source_node = self.puzzle[source_node_id]
+            source_node.modify_node(color, NodeTypes.SOURCE)
+            sink_node_id = node_ids[1]
+            sink_node = self.puzzle[sink_node_id]
+            sink_node.modify_node(color, NodeTypes.SINK)
 
     def node_id_to_x_y(self, node_id):
         y = self.y_dim - 1 - int(node_id / self.x_dim)
@@ -56,10 +60,11 @@ class GridPuzzle:
             for x in range(0, self.x_dim):
                 node_id = self.x_y_to_node_id(x, y)
                 node = self.puzzle[node_id]
-                if node.color is None:
+                if node.node_type is NodeTypes.EMPTY:
                     print(".", end="")
                 else:
-                    print(node.color, end="")
+                    terminal_color = BColors.get_terminal_color(node.color)
+                    print(terminal_color + node.color + BColors.ENDC, end="")
             print()
 
     @staticmethod
