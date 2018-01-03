@@ -1,20 +1,16 @@
 class BColors:
-    RED = '\033[91m'
-    GREEN = '\033[92m'
-    BLUE = '\033[94m'
-    CYAN = '\033[96m'
-    WHITE = '\033[97m'
-    YELLOW = '\033[93m'
-    MAGENTA = '\033[95m'
-    GREY = '\033[90m'
-    BLACK = '\033[90m'
-    DEFAULT = '\033[99m'
+    BLACK = '\033[40m'
+    RED = '\033[41m'
+    GREEN = '\033[42m'
+    YELLOW = '\033[43m'
+    BLUE = '\033[44m'
+    MAGENTA = '\033[45m'
+    CYAN = '\033[46m'
+    WHITE = '\033[47m'
     ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
 
     @staticmethod
-    def get_terminal_color(color):
+    def get_bg_color(color):
         if color == 'R':
             return BColors.RED
         elif color == 'B':
@@ -29,4 +25,4 @@ class BColors:
             return BColors.CYAN
         elif color == 'W':
             return BColors.WHITE
-        return BColors.DEFAULT
+        return BColors.BLACK

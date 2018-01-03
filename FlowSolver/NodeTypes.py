@@ -18,3 +18,20 @@ class NodeTypes(Enum):
     FLOW_TO_SINK = 6
     # Any node which is part of a completed flow
     COMPLETED_FLOW = 7
+
+    @staticmethod
+    def get_node_shape(node_type):
+        if node_type == NodeTypes.EMPTY:
+            return "."
+        elif node_type == NodeTypes.SOURCE:
+            return "O"
+        elif node_type == NodeTypes.SINK:
+            return "X"
+        elif node_type == NodeTypes.CURRENT_SOURCE:
+            return "o"
+        elif node_type == NodeTypes.CURRENT_SINK:
+            return "x"
+        elif node_type == NodeTypes.COMPLETED_FLOW:
+            return "ø"
+        return "*"
+

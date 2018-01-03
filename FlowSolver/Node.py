@@ -11,9 +11,18 @@ class Node:
     def add_neighbor(self, neighbor_id):
         self.neighbor_ids.add(neighbor_id)
 
-    def modify_node(self, color, node_type):
-        self.color = color
-        self.node_type = node_type
+    def remove_neighbor(self, neighbor_id):
+        self.neighbor_ids.remove(neighbor_id)
+
+    def clear_neighbors(self):
+        self.neighbor_ids.clear()
+
+    def modify_node(self, node_type, color=None):
+        # Don't change immutable node types
+        if self.node_type is not NodeTypes.SOURCE and self.node_type is not NodeTypes.SINK:
+            self.node_type = node_type
+        if color is not None:
+            self.color = color
 
     def __str__(self):
         return str(self.node_id) + " " + str(self.color) + ": " + str(self.neighbor_ids)
