@@ -1,11 +1,13 @@
 import os
 from collections import defaultdict
-
-import sys
+from time import sleep
+import logging
 
 from FlowSolver.FColors import FColors
 from FlowSolver.Node import Node
 from FlowSolver.NodeTypes import NodeTypes
+
+logging.basicConfig(filename="test.log", level=logging.DEBUG)
 
 
 class GridPuzzle:
@@ -15,6 +17,13 @@ class GridPuzzle:
         self.puzzle = {}
         self.current_source_node_ids = {}
         self.current_sink_node_ids = {}
+        self.colors = []
+        self.color_index = -1
+        self.current_color = None
+        # These settings can be toggled
+        self.debug = True
+        self.sleep_time = 0.1
+
         for x in range(0, x_dim):
             for y in range(0, y_dim):
                 node_id = self.x_y_to_node_id(x, y)
@@ -36,6 +45,9 @@ class GridPuzzle:
 
         # Add initial locations (Dictionary of Color -> [NodeId])
         for color, node_ids in initial_locations.items():
+            # Add all colors
+            self.colors.append(color)
+
             # Add all source nodes
             source_node_id = node_ids[0]
             source_node = self.puzzle[source_node_id]
@@ -49,9 +61,50 @@ class GridPuzzle:
             sink_node.modify_node(NodeTypes.SINK, color)
             self.current_sink_node_ids[color] = sink_node_id
 
-    def solve_next_step(self, color):
-        # TODO: Do stuff here
-        self.find_forced_move(self.current_source_node_ids[color])
+        # Set an initial color
+        self.next_color()
+
+    def next_color(self):
+        if not self.colors:
+            return
+        self.color_index = (self.color_index + 1) % len(self.colors)
+        self.current_color = self.colors[self.color_index]
+        logging.debug("Checking color: " + self.current_color)
+
+    def solve_puzzle(self):
+        print("Provided puzzle:")
+        self.print_puzzle()
+        count = 0
+        while self.colors:
+            count += 1
+            made_progress = self.solve_next_step()
+            if made_progress:
+                self.print_puzzle_debug()
+                finished_flow = self.try_finish_flow(self.current_color)
+                if finished_flow:
+                    self.print_puzzle_debug()
+                    self.next_color()
+            else:
+                self.next_color()
+        print("Done!")
+        self.print_puzzle()
+        logging.info("Solving the puzzle took " + str(count) + " steps")
+
+    def solve_next_step(self):
+        node_id = self.current_source_node_ids[self.current_color]
+        # Find and make a forced move
+        next_node_id = self.find_forced_move(node_id)
+        if next_node_id is not None:
+            self.update_current_source(node_id, next_node_id)
+            return True
+        return False
+
+    def try_finish_flow(self, color):
+        # Finish a flow if possible
+        if self.find_finished_flow(color):
+            self.finish_flow(color)
+            return True
+        return False
 
     def remove_incoming_neighbors(self, node_id):
         for neighbor_node_id in self.puzzle[node_id].original_neighbor_ids:
@@ -63,22 +116,28 @@ class GridPuzzle:
         # If there is only one node to move to
         if len(node.neighbor_ids) == 1:
             forced_neighbor_id = node.neighbor_ids.pop()
-            self.update_current_source(node_id, forced_neighbor_id)
-            return True
-        # If any neighbor only has one free neighbor
+            return forced_neighbor_id
+        # If a neighbor is adjacent to a single source and only has one free neighbor
         for neighbor_id in node.neighbor_ids:
             neighbor_node = self.puzzle[neighbor_id]
             if len(neighbor_node.neighbor_ids) == 1:
-                self.update_current_source(node_id, neighbor_id)
-                return True
-        return False
+                adjacent_sources = set(self.current_source_node_ids.values()) & neighbor_node.original_neighbor_ids
+                if len(adjacent_sources) == 1:
+                    return neighbor_id
+        return None
 
-    def finish_color(self, color):
-        node_id = self.current_source_node_ids[color]
+    def find_finished_flow(self, color):
+        node = self.puzzle[self.current_source_node_ids[color]]
         sink_node_id = self.current_sink_node_ids[color]
-        if sink_node_id in self.puzzle[node_id].neighbor_ids:
-            for flow_node in [n for n in self.puzzle.values() if n.color == color]:
-                flow_node.modify_node(NodeTypes.COMPLETED_FLOW)
+        return sink_node_id in node.neighbor_ids
+
+    def finish_flow(self, color):
+        self.colors.remove(color)
+        logging.info("Finished flow for " + color + ". Remaining: " + str(self.colors))
+        self.remove_incoming_neighbors(self.current_sink_node_ids[color])
+        # TODO: This is not remotely efficient
+        for flow_node in [n for n in self.puzzle.values() if n.color == color]:
+            flow_node.modify_node(NodeTypes.COMPLETED_FLOW)
 
     def update_current_source(self, old_source_id, new_source_id):
         old_source_node = self.puzzle[old_source_id]
@@ -89,6 +148,7 @@ class GridPuzzle:
         self.remove_incoming_neighbors(new_source_id)
         old_source_node.clear_neighbors()
         self.current_source_node_ids[color] = new_source_id
+        logging.info("Updated " + color + " source from " + str(old_source_id) + " to " + str(new_source_id))
 
     def node_id_to_x_y(self, node_id):
         y = self.y_dim - 1 - int(node_id / self.x_dim)
@@ -106,7 +166,12 @@ class GridPuzzle:
         for node in self.puzzle.values():
             print(node)
 
+    def print_puzzle_debug(self):
+        if self.debug:
+            self.print_puzzle()
+
     def print_puzzle(self):
+        sleep(self.sleep_time)
         for y in range(self.y_dim-1, -1, -1):
             for x in range(0, self.x_dim):
                 node_id = self.x_y_to_node_id(x, y)

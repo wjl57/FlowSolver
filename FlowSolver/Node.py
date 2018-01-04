@@ -24,7 +24,7 @@ class Node:
         # Don't change immutable node types
         if self.node_type is not NodeTypes.SOURCE and self.node_type is not NodeTypes.SINK:
             self.node_type = node_type
-        if color is not None:
+        if color is not None and self.color is None:
             self.color = color
 
     def __str__(self):
