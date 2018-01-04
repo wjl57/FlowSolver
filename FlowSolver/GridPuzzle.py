@@ -49,21 +49,28 @@ class GridPuzzle:
             sink_node.modify_node(NodeTypes.SINK, color)
             self.current_sink_node_ids[color] = sink_node_id
 
-    def solve_next_step(self):
+    def solve_next_step(self, color):
         # TODO: Do stuff here
-        self.find_forced_move(self.current_source_node_ids['Y'])
+        self.find_forced_move(self.current_source_node_ids[color])
 
     def remove_incoming_neighbors(self, node_id):
-        for neighbor_node_id in self.puzzle[node_id].neighbor_ids:
+        for neighbor_node_id in self.puzzle[node_id].original_neighbor_ids:
             neighbor_node = self.puzzle[neighbor_node_id]
             neighbor_node.remove_neighbor(node_id)
 
     def find_forced_move(self, node_id):
         node = self.puzzle[node_id]
+        # If there is only one node to move to
         if len(node.neighbor_ids) == 1:
             forced_neighbor_id = node.neighbor_ids.pop()
-            self.modify_current_source(node_id, forced_neighbor_id)
+            self.update_current_source(node_id, forced_neighbor_id)
             return True
+        # If any neighbor only has one free neighbor
+        for neighbor_id in node.neighbor_ids:
+            neighbor_node = self.puzzle[neighbor_id]
+            if len(neighbor_node.neighbor_ids) == 1:
+                self.update_current_source(node_id, neighbor_id)
+                return True
         return False
 
     def finish_color(self, color):
@@ -73,7 +80,7 @@ class GridPuzzle:
             for flow_node in [n for n in self.puzzle.values() if n.color == color]:
                 flow_node.modify_node(NodeTypes.COMPLETED_FLOW)
 
-    def modify_current_source(self, old_source_id, new_source_id):
+    def update_current_source(self, old_source_id, new_source_id):
         old_source_node = self.puzzle[old_source_id]
         new_source_node = self.puzzle[new_source_id]
         color = old_source_node.color
