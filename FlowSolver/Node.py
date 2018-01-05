@@ -24,8 +24,13 @@ class Node:
         # Don't change immutable node types
         if self.node_type is not NodeTypes.SOURCE and self.node_type is not NodeTypes.SINK:
             self.node_type = node_type
-        if color is not None and self.color is None:
-            self.color = color
+        if color is not None:
+            if self.color is not None:
+                raise Exception(
+                    "Not allowed to update color of " + str(self.node_id) + " from " + str(self.color) + " to " +
+                    str(color))
+            else:
+                self.color = color
 
     def __str__(self):
         return str(self.node_id) + " " + str(self.color) + ": " + str(self.neighbor_ids)

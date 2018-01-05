@@ -52,13 +52,14 @@ class GridPuzzle:
             source_node_id = node_ids[0]
             source_node = self.puzzle[source_node_id]
             source_node.modify_node(NodeTypes.SOURCE, color)
-            self.current_source_node_ids[color] = source_node_id
             self.remove_incoming_neighbors(source_node_id)
+            self.current_source_node_ids[color] = source_node_id
 
             # Add all sink nodes
             sink_node_id = node_ids[1]
             sink_node = self.puzzle[sink_node_id]
             sink_node.modify_node(NodeTypes.SINK, color)
+            sink_node.clear_neighbors()
             self.current_sink_node_ids[color] = sink_node_id
 
         # Set an initial color
