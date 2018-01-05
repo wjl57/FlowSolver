@@ -5,3 +5,4 @@
 .idea/*
 
 *.log
+FlowSolver/__pycache__/*
